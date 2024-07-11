@@ -18,7 +18,7 @@ const excludedChars = ['.', ',', ':', ' '];
 const popupElId = 'currency-popup';
 const popupValueElId = 'currency-converted-amount';
 const loaderElId = 'currency-popup-loader';
-let lastTestSelected;
+let lastTextSelected;
 
 function debounce(func, timeout = 1000) {
     let timer;
@@ -81,6 +81,7 @@ function getCurrencyObj(txt) {
 
 const debouncedSendMessage = debounce(sendMessage);
 const debouncedCloseMessage = debounce(toggleElement, 7000);
+const debouncedResetLastTextSelected = debounce(() => lastTextSelected = '', 6000);
 
 document.addEventListener('mouseup', () => {
     const selectedText = window.getSelection()?.toString().trim();
@@ -88,9 +89,10 @@ document.addEventListener('mouseup', () => {
 
     if (!selectedText || !ccObj) return;
 
-    if (lastTestSelected === selectedText) return;
+    if (lastTextSelected === selectedText) return;
 
-    lastTestSelected = selectedText;
+    lastTextSelected = selectedText;
+    debouncedResetLastTextSelected();
 
     toggleElement(loaderElId, 'block');
     showPopup();
