@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Currency converter",
-    "version": "1.0",
+    "version": "1.1",
     "description": "Convert currency",
     "permissions": [
         "activeTab"
@@ -16,6 +16,18 @@
             ],
             "js": [
                 "content.js"
+            ]
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "popup.html",
+                "popup.css",
+                "loader.css"
+            ],
+            "matches": [
+                "<all_urls>"
             ]
         }
     ]

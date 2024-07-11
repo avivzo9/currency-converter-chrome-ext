@@ -1,32 +1,21 @@
 console.log('Listening to text...');
 
-const excludedChars = ['.', ',', ':', ' '];
 const apikey = 'fca_live_rWnxw7LNz0YXmt9uosZm46V8K0gSFv3Hpuc61din';
 const apiUrl = `https://api.freecurrencyapi.com/v1`;
 
 let lastText = '';
 
-function getCurrencyObj(txt) {
-    console.log("Selected text:", txt);
-    const regExp = /^\s*(?:[$€£¥₹])\s*(\d+(?:\.\d{1,2})?)\s*(?:[$€£¥₹]?)\s*$/;
-    const match = txt.match(regExp);
+async function sendMessageToContentScript(message) {
+    return new Promise((resolve, reject) => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
 
-    if (match) {
-        const numeric = match[1];
-
-        const currencySymbol = txt.match(/\D/g);
-        const filtterdSymbol = currencySymbol.filter(char => !excludedChars.includes(char.trim()));
-
-        if (filtterdSymbol?.length !== 1) return null;
-
-        return {
-            numeric,
-            symbol: filtterdSymbol[0]
-        };
-    } else {
-        console.log("Invalid currency format");
-        return null;
-    }
+            if (tabs[0]) {
+                chrome.tabs.sendMessage(tabs[0].id, message, (response) => resolve(response));
+            } else {
+                reject("No active tab found.");
+            }
+        });
+    })
 }
 
 async function getCurrencyLatest(currencyCode) {
@@ -58,13 +47,12 @@ async function getCurrencies() {
 }
 
 chrome.runtime.onMessage.addListener(async (request) => {
-    const txt = request.text?.trim();
+    if (false) {
+        await sendMessageToContentScript(65);
+        return
+    }
 
-    if (!txt || txt === lastText) return;
-
-    lastText = txt;
-
-    const ccObj = getCurrencyObj(txt);
+    const ccObj = request.ccObj;
 
     if (!ccObj) {
         console.log("Invalid currency format");
@@ -82,7 +70,8 @@ chrome.runtime.onMessage.addListener(async (request) => {
         const currencyVals = await getCurrencyLatest(currency.code);
 
         const result = ccObj.numeric * currencyVals.get('ILS');
-        console.log('result:', result)
+
+        await sendMessageToContentScript(result.toFixed(2));
 
         return true;
     } catch (err) {
