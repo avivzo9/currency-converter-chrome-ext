@@ -18,9 +18,16 @@ const excludedChars = ['.', ',', ':', ''];
 const popupElId = 'currency-popup';
 const popupValueElId = 'currency-converted-amount';
 const loaderElId = 'currency-popup-loader';
-let lastTextSelected;
+const GGTranslatorElId = 'gtx-trans';
 
-function debounce(func, timeout = 1000) {
+const debounceValue = 5000;
+
+let hasSelection = false;
+let lastTextSelected;
+let GGTranslatorEl;
+let isShowGGTranslator = true;
+
+function debounce(func, timeout = debounceValue) {
     let timer;
 
     return (...args) => {
@@ -49,6 +56,12 @@ function showPopup(amount) {
 
 function toggleElement(elId, displayType) {
     const element = document.getElementById(elId);
+
+    if (!element) {
+        console.error(`Element ${elId} not found`);
+        return;
+    }
+
     element.style.display = displayType;
 }
 
@@ -81,28 +94,56 @@ function getCurrencyObj(txt) {
     }
 }
 
+(function findGGTranslator() {
+    // Create a new observer instance
+    const observer = new MutationObserver((mutationsList) => {
+
+        if (!mutationsList?.length) return;
+
+        mutationsList.forEach(m => {
+            if (m.type === 'childList' && m.addedNodes?.length) {
+                for (let i = 0; i < m.addedNodes.length; i++) {
+                    const currNode = m.addedNodes[i];
+
+                    if (currNode?.id === GGTranslatorElId) {
+                        GGTranslatorEl = currNode;
+                        toggleElement(GGTranslatorElId, isShowGGTranslator ? 'block' : 'none')
+                    };
+                }
+            };
+        });
+    });
+
+    // Start observing the document for changes
+    observer.observe(document.body, { childList: true, subtree: true });
+})();
+
 const debouncedSendMessage = debounce(sendMessage);
-const debouncedCloseMessage = debounce(toggleElement, 7000);
-const debouncedResetLastTextSelected = debounce(() => lastTextSelected = '', 6000);
+const debouncedCloseMessage = debounce(toggleElement);
+const debouncedResetLastTextSelected = debounce(() => lastTextSelected = '');
+const debouncedHideGGTranslator = debounce(() => isShowGGTranslator = true);
+
+function init(selectedText, ccObj) {
+    isShowGGTranslator = false;
+    lastTextSelected = selectedText;
+    debouncedResetLastTextSelected();
+    toggleElement(loaderElId, 'block');
+    showPopup();
+    debouncedSendMessage('ccObj', ccObj);
+}
 
 document.addEventListener('mouseup', () => {
     const selectedText = window.getSelection()?.toString().trim();
     const ccObj = getCurrencyObj(selectedText);
 
-    if (!selectedText || !ccObj) return;
+    if (!selectedText || !ccObj || lastTextSelected === selectedText) return;
 
-    if (lastTextSelected === selectedText) return;
-
-    lastTextSelected = selectedText;
-    debouncedResetLastTextSelected();
-
-    toggleElement(loaderElId, 'block');
-    showPopup();
-    debouncedSendMessage('ccObj', ccObj);
+    init(selectedText, ccObj);
 });
 
 chrome.runtime.onMessage.addListener(async (res) => {
     toggleElement(loaderElId, 'none');
     showPopup('₪' + res);
     debouncedCloseMessage(popupElId, 'none');
+    debouncedHideGGTranslator();
 })
