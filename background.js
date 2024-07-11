@@ -47,10 +47,9 @@ async function getCurrencies() {
 }
 
 chrome.runtime.onMessage.addListener(async (request) => {
-    if (false) {
-        await sendMessageToContentScript(65);
-        return
-    }
+    // Debug:
+    // await sendMessageToContentScript(65);
+    // return
 
     const ccObj = request.ccObj;
 

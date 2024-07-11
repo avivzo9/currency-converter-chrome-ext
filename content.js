@@ -14,7 +14,7 @@ fetch(chrome.runtime.getURL("popup.html"))
     .then(response => response.text())
     .then(html => document.body.insertAdjacentHTML('beforeend', html));
 
-const excludedChars = ['.', ',', ':', ' '];
+const excludedChars = ['.', ',', ':', ''];
 const popupElId = 'currency-popup';
 const popupValueElId = 'currency-converted-amount';
 const loaderElId = 'currency-popup-loader';
@@ -35,15 +35,15 @@ function updateUserMessage(msg) {
 
 function showPopup(amount) {
     const popup = document.getElementById(popupElId);
-
     const range = window.getSelection().getRangeAt(0);
-    const rect = range.getBoundingClientRect();
+    const rect = range?.getBoundingClientRect();
+
+    if (!rect) return;
 
     popup.style.left = `${rect.left}px`;
     popup.style.top = `${rect.bottom}px`;
 
     updateUserMessage(amount || '');
-
     toggleElement(popupElId, 'flex');
 }
 
@@ -64,14 +64,16 @@ function getCurrencyObj(txt) {
     if (match) {
         const numeric = match[1];
 
-        const currencySymbol = txt.match(/\D/g);
-        const filtterdSymbol = currencySymbol.filter(char => !excludedChars.includes(char.trim()));
+        const dirtySymbol = txt.match(/\D/g);
+        console.log('dirtySymbol:', dirtySymbol)
+        const currencySymbol = dirtySymbol.filter(char => !excludedChars.includes(char.trim()));
+        console.log('currencySymbol:', currencySymbol)
 
-        if (filtterdSymbol?.length !== 1) return null;
+        if (currencySymbol?.length !== 1) return null;
 
         return {
             numeric,
-            symbol: filtterdSymbol[0]
+            symbol: currencySymbol[0]
         };
     } else {
         console.log("Invalid currency format");
