@@ -22,7 +22,6 @@ const GGTranslatorElId = 'gtx-trans';
 
 const debounceValue = 5000;
 
-let hasSelection = false;
 let lastTextSelected;
 let GGTranslatorEl;
 let isShowGGTranslator = true;
@@ -41,20 +40,43 @@ function updateUserMessage(msg) {
 }
 
 function showPopup(amount) {
+    // get popup container element
     const popup = document.getElementById(popupElId);
-    const range = window.getSelection().getRangeAt(0);
+
+    if (!popup) {
+        console.error(`Element ${popupElId} not found`);
+        return;
+    }
+
+    const selection = window?.getSelection();
+
+    if (!selection || !selection?.rangeCount) return;
+
+    // get the range of the selected text
+    const range = selection?.getRangeAt(0);
+
+    if (!range) return;
+
+    // get the rect of the range
     const rect = range?.getBoundingClientRect();
 
     if (!rect) return;
 
-    popup.style.left = `${rect.left}px`;
-    popup.style.top = `${rect.bottom}px`;
+    // Calculate position accounting for scroll
+    const scrollX = window.scrollX || document.documentElement.scrollLeft;
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
 
+    popup.style.left = `${rect.left + scrollX}px`;
+    popup.style.top = `${rect.bottom + scrollY}px`;
+
+    // update the popup with the amount
     updateUserMessage(amount || '');
+    // change the display of the popup to flex
     toggleElement(popupElId, 'flex');
 }
 
 function toggleElement(elId, displayType) {
+    // get the element by id
     const element = document.getElementById(elId);
 
     if (!element) {
@@ -62,36 +84,33 @@ function toggleElement(elId, displayType) {
         return;
     }
 
+    // set the display of the element
     element.style.display = displayType;
 }
 
 function sendMessage(key, message) {
+    isFetching = true;
+    // send message to background.js
     chrome.runtime.sendMessage({ [key]: message });
 }
 
 function getCurrencyObj(txt) {
-    console.log("Selected text:", txt);
     const regExp = /^\s*(?:[$€£¥₹])\s*(\d+(?:\.\d{1,2})?)\s*(?:[$€£¥₹]?)\s*$/;
     const match = txt.match(regExp);
 
-    if (match) {
-        const numeric = match[1];
-
-        const dirtySymbol = txt.match(/\D/g);
-        console.log('dirtySymbol:', dirtySymbol)
-        const currencySymbol = dirtySymbol.filter(char => !excludedChars.includes(char.trim()));
-        console.log('currencySymbol:', currencySymbol)
-
-        if (currencySymbol?.length !== 1) return null;
-
-        return {
-            numeric,
-            symbol: currencySymbol[0]
-        };
-    } else {
-        console.log("Invalid currency format");
+    if (!match) {
+        console.error("Invalid currency format");
         return null;
-    }
+    };
+
+    const numeric = match[1];
+
+    const dirtySymbol = txt.match(/\D/g);
+    const currencySymbol = dirtySymbol.filter(char => !excludedChars.includes(char.trim()));
+
+    if (currencySymbol?.length !== 1) return null;
+
+    return { numeric, symbol: currencySymbol[0] };
 }
 
 (function findGGTranslator() {
@@ -118,32 +137,44 @@ function getCurrencyObj(txt) {
     observer.observe(document.body, { childList: true, subtree: true });
 })();
 
-const debouncedSendMessage = debounce(sendMessage);
-const debouncedCloseMessage = debounce(toggleElement);
+const debouncedInit = debounce(init, 500);
+const debouncedClosePopup = debounce(closePopup);
 const debouncedResetLastTextSelected = debounce(() => lastTextSelected = '');
-const debouncedHideGGTranslator = debounce(() => isShowGGTranslator = true);
 
 function init(selectedText, ccObj) {
+    console.log('Currency Converter started, I\'m here to help!');
+    // hide GGTranslator
     isShowGGTranslator = false;
+    // set the last selected text
     lastTextSelected = selectedText;
+    // reset the last selected text after 5 seconds
     debouncedResetLastTextSelected();
-    toggleElement(loaderElId, 'block');
+    // toggle popup
     showPopup();
-    debouncedSendMessage('ccObj', ccObj);
+    // toggle loader
+    toggleElement(loaderElId, 'block');
+    sendMessage('ccObj', ccObj);
+}
+
+function closePopup() {
+    toggleElement(popupElId, 'none');
+    isShowGGTranslator = false;
 }
 
 document.addEventListener('mouseup', () => {
-    const selectedText = window.getSelection()?.toString().trim();
+    const selectedText = window?.getSelection()?.toString()?.trim();
+
+    if (!selectedText) return;
+
     const ccObj = getCurrencyObj(selectedText);
 
-    if (!selectedText || !ccObj || lastTextSelected === selectedText) return;
+    if (!ccObj || lastTextSelected === selectedText) return;
 
-    init(selectedText, ccObj);
+    debouncedInit(selectedText, ccObj);
 });
 
-chrome.runtime.onMessage.addListener(async (res) => {
+chrome.runtime.onMessage.addListener(async res => {
     toggleElement(loaderElId, 'none');
-    showPopup('₪' + res);
-    debouncedCloseMessage(popupElId, 'none');
-    debouncedHideGGTranslator();
+    updateUserMessage('₪' + res);
+    debouncedClosePopup();
 })
