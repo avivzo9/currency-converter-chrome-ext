@@ -24,7 +24,8 @@
             "resources": [
                 "popup.html",
                 "popup.css",
-                "loader.css"
+                "loader.css",
+                "secrets.json"
             ],
             "matches": [
                 "<all_urls>"

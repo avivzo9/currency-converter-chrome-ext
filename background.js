@@ -1,9 +1,12 @@
+let apiKey = '';
+
+fetch(chrome.runtime.getURL("secrets.json"))
+    .then(response => response.json())
+    .then(json => apiKey = json.API_KEY);
+
 console.log('Listening to text...');
 
-const apikey = 'fca_live_rWnxw7LNz0YXmt9uosZm46V8K0gSFv3Hpuc61din';
 const apiUrl = `https://api.freecurrencyapi.com/v1`;
-
-let lastText = '';
 
 async function sendMessageToContentScript(message) {
     return new Promise((resolve, reject) => {
@@ -20,7 +23,7 @@ async function sendMessageToContentScript(message) {
 
 async function getCurrencyLatest(currencyCode) {
     try {
-        const response = await fetch(apiUrl + `/latest?apikey=${apikey}&currencies=ILS&base_currency=${currencyCode}`)
+        const response = await fetch(apiUrl + `/latest?apikey=${apiKey}&currencies=ILS&base_currency=${currencyCode}`)
 
         if (!response.ok) throw new Error(`Response status: ${response.status}`);
 
@@ -28,13 +31,13 @@ async function getCurrencyLatest(currencyCode) {
 
         return new Map(Object.entries(json.data));
     } catch (err) {
-        console.log('getCurrencyLatest:', err);
+        console.error('getCurrencyLatest:', err);
     }
 }
 
 async function getCurrencies() {
     try {
-        const response = await fetch(apiUrl + `/currencies?apikey=${apikey}&currencies=`);
+        const response = await fetch(apiUrl + `/currencies?apikey=${apiKey}&currencies=`);
 
         if (!response.ok) throw new Error(`Response status: ${response.status}`);
 
@@ -42,7 +45,7 @@ async function getCurrencies() {
 
         return new Map(Object.entries(json.data));
     } catch (err) {
-        console.log('getCurrencies:', err);
+        console.error('getCurrencies:', err);
     }
 }
 
