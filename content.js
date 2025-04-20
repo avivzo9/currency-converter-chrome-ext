@@ -95,13 +95,13 @@ function sendMessage(key, message) {
 }
 
 function getCurrencyObj(txt) {
-    const regExp = /^\s*(?:[$€£¥₹])?\s*(\d+(?:\.\d{1,2})?)\s*(?:[$€£¥₹])?\s*$/;
+    const regExp = /^\s*[\(\[]?\s*(?:[$€£¥₹])?\s*(\d+(?:\.\d{1,2})?)\s*(?:[$€£¥₹])?\s*[\)\]]?\s*$/;
     const match = txt.match(regExp);
 
     if (!match) {
         console.error("Invalid currency format");
         return null;
-    };
+    }
 
     const numeric = match[1];
 
