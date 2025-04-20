@@ -95,7 +95,7 @@ function sendMessage(key, message) {
 }
 
 function getCurrencyObj(txt) {
-    const regExp = /^\s*(?:[$€£¥₹])\s*(\d+(?:\.\d{1,2})?)\s*(?:[$€£¥₹]?)\s*$/;
+    const regExp = /^\s*(?:[$€£¥₹])?\s*(\d+(?:\.\d{1,2})?)\s*(?:[$€£¥₹])?\s*$/;
     const match = txt.match(regExp);
 
     if (!match) {
