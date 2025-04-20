@@ -89,7 +89,6 @@ function toggleElement(elId, displayType) {
 }
 
 function sendMessage(key, message) {
-    isFetching = true;
     // send message to background.js
     chrome.runtime.sendMessage({ [key]: message });
 }
@@ -171,10 +170,13 @@ document.addEventListener('mouseup', () => {
     if (!ccObj || lastTextSelected === selectedText) return;
 
     debouncedInit(selectedText, ccObj);
-});
-
-chrome.runtime.onMessage.addListener(async res => {
-    toggleElement(loaderElId, 'none');
-    updateUserMessage('₪' + res);
-    debouncedClosePopup();
 })
+
+chrome.runtime.onMessage.addListener(async (request, _, sendResponse) => {
+    toggleElement(loaderElId, 'none');
+    updateUserMessage('₪' + request);
+    debouncedClosePopup();
+
+    sendResponse({ status: 'ok' });
+    return true;
+});

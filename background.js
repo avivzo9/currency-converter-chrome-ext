@@ -10,14 +10,18 @@ const apiUrl = `https://api.freecurrencyapi.com/v1`;
 
 async function sendMessageToContentScript(message) {
     return new Promise((resolve, reject) => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-
-            if (tabs[0]) {
-                chrome.tabs.sendMessage(tabs[0].id, message, (response) => resolve(response));
-            } else {
-                reject("No active tab found.");
-            }
-        });
+        try {
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                if (tabs.length) {
+                    chrome.tabs.sendMessage(tabs[0].id, message, (response) => resolve(response));
+                } else {
+                    reject("No active tab found.");
+                }
+            });
+        } catch (err) {
+            console.error('sendMessageToContentScript:', err);
+            reject(err);
+        }
     })
 }
 
@@ -56,6 +60,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
     const ccObj = request.ccObj;
 
+    console.log('ccObj:', ccObj)
     if (!ccObj) {
         console.log("Invalid currency format");
         return null;
@@ -65,6 +70,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
         const currencies = await getCurrencies();
 
         let currency = null;
+
         currencies.forEach((value) => {
             if (value.symbol === ccObj.symbol) currency = value;
         })
