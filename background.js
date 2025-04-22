@@ -42,10 +42,12 @@ async function getCurrencyLatest(currencyCode) {
 async function getCurrencies() {
     try {
         const response = await fetch(apiUrl + `/currencies?apikey=${apiKey}&currencies=`);
+        console.log('response:', response)
 
         if (!response.ok) throw new Error(`Response status: ${response.status}`);
 
         const json = await response.json();
+        console.log('json:', json)
 
         return new Map(Object.entries(json.data));
     } catch (err) {
@@ -68,6 +70,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
     try {
         const currencies = await getCurrencies();
+        console.log('currencies:', currencies)
 
         let currency = null;
 
