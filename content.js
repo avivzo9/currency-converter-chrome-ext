@@ -163,6 +163,7 @@ function closePopup() {
 document.addEventListener('mouseup', () => {
     const selectedText = window?.getSelection()?.toString()?.trim();
 
+    console.log('selectedText:', selectedText)
     if (!selectedText) return;
 
     const ccObj = getCurrencyObj(selectedText);

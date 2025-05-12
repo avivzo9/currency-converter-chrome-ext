@@ -1,9 +1,5 @@
 let apiKey = '';
 
-fetch(chrome.runtime.getURL("secrets.json"))
-    .then(response => response.json())
-    .then(json => apiKey = json.API_KEY);
-
 console.log('Listening to text...');
 
 const apiUrl = `https://api.freecurrencyapi.com/v1`;
@@ -47,7 +43,6 @@ async function getCurrencies() {
         if (!response.ok) throw new Error(`Response status: ${response.status}`);
 
         const json = await response.json();
-        console.log('json:', json)
 
         return new Map(Object.entries(json.data));
     } catch (err) {
@@ -55,22 +50,35 @@ async function getCurrencies() {
     }
 }
 
+async function loadToken() {
+    try {
+        const token = await fetch(chrome.runtime.getURL("secrets.json"));
+
+        if (!token.ok) throw new Error(`Response status: ${token.status}`);
+        const json = await token.json();
+
+        apiKey = json.API_KEY;
+    } catch (err) {
+        throw err;
+    }
+}
+
 chrome.runtime.onMessage.addListener(async (request) => {
     // Debug:
     // await sendMessageToContentScript(65);
-    // return
+    // return    
 
     const ccObj = request.ccObj;
 
-    console.log('ccObj:', ccObj)
     if (!ccObj) {
         console.log("Invalid currency format");
         return null;
     }
 
     try {
+        await loadToken();
+
         const currencies = await getCurrencies();
-        console.log('currencies:', currencies)
 
         let currency = null;
 
@@ -89,3 +97,4 @@ chrome.runtime.onMessage.addListener(async (request) => {
         console.log('listener:', err);
     }
 });
+
